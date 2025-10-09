@@ -9,6 +9,7 @@
 #include "../dungeon_mode/enums.h"
 #include "file_io.h"
 #include "graphics.h"
+#include "input.h"
 #include "sound.h"
 #include "../files/wan.h"
 #include "window.h"
