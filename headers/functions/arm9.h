@@ -389,8 +389,8 @@ void LoadWazaP2(void);
 void UnloadCurrentWazaP(void);
 char* GetMoveName(enum move_id move_id);
 void FormatMoveString(char* string, struct move* move, undefined* type_print);
-void FormatMoveStringMore(undefined* param_1, int param_2, struct move* move,
-                          undefined* type_print);
+void FormatMoveStringMore(struct preprocessor_args* preprocessor_args, uint8_t pos,
+                          struct move* move, undefined* type_print);
 void InitMove(struct move* move, enum move_id move_id);
 void InitMoveCheckId(struct move* move, enum move_id move_id);
 void GetInfoMoveGround(struct ground_move* move, enum move_id move_id);

@@ -1671,19 +1671,91 @@ ASSERT_SIZE(struct alarm_callback_info, 12);
 
 struct effect_animation {
     enum effect_file_type file_type; // 0x0
-    int file_index;                  // 0x4: File index in pack 3 (effect.bin)
-    int palette_num;                 // 0x8
+    uint32_t file_index;             // 0x4: File index in pack 3 (effect.bin)
+    uint32_t palette_num;            // 0x8
     // 0xC: Some sort of index into the file. Related animations are grouped together into the same
     // file and indexed with this. Is used as the animation_key parameter in
     // SetAnimationForAnimationControl.
-    int animation_index;
+    uint32_t animation_index;
     int se_id;                // 0x10: Sound effect id, passed to PlaySeByIdVolume
-    int field_0x14;           // 0x14: Seemingly always 0
+    undefined4 field_0x14;    // 0x14: Seemingly always 0
     uint8_t is_screen_effect; // 0x18: Seems to always be 1 for screen effects, unused otherwise
     struct wan_offset_type_8 wan_offset; // 0x19
     uint8_t is_non_blocking;             // 0x1A
     uint8_t repeat; // 0x1B: If non-zero, makes the animation repeat a bunch of times
 };
 ASSERT_SIZE(struct effect_animation, 28);
+
+struct live_effect_unk_substruct {
+    undefined field_0x0[64];
+};
+ASSERT_SIZE(struct live_effect_unk_substruct, 64);
+
+// Represents an effect animation that is currently playing
+struct live_effect {
+    enum screen screen; // 0x0
+    undefined4 field_0x4;
+    enum effect_file_type file_type; // 0x8
+    int unique_id;                   // 0xC: -1 if no effect playing
+    undefined4 field_0x10;
+    uint32_t effect_id;    // 0x14
+    undefined4 field_0x18; // Seemingly always 0
+    undefined4 field_0x1c;
+    struct vec2_16 pos; // 0x20: Absolute pixel coordinates of effect
+    undefined4 field_0x24;
+    undefined4 field_0x28;
+    undefined4 field_0x2c;
+    uint16_t oam_adjustment_info[6];      // 0x30
+    uint32_t some_bitfield;               // 0x3C
+    enum effect_file_type file_type_copy; // 0x40: Seemingly a copy of file_type
+    int file_index;                       // 0x44: File index in pack 3 (effect.bin)
+    uint32_t palette_num;                 // 0x48
+    undefined4 field_0x4c;
+    uint32_t animation_index; // 0x50: See struct effect_animation
+    undefined4 field_0x54;
+    int se_id;               // 0x58
+    undefined4 field_0x5c;   // Seemingly always 0
+    uint8_t is_non_blocking; // 0x60
+    uint8_t repeat;          // 0x61: If non-zero, makes the animation repeat a bunch of times
+    undefined2 field_0x62;
+    int16_t wan_id; // 0x64: Entry in wan_table
+    undefined2 field_0x66;
+    struct animation_control anim_ctrl; // 0x68
+    undefined2 field_0xe4;
+    undefined field_0xe6;
+    undefined field_0xe7;
+    struct live_effect_unk_substruct field_0xe8;
+    undefined2 field_0x128;
+    undefined2 field_0x12a;
+    undefined2 field_0x12c;
+    undefined2 field_0x12e;
+    undefined2 field_0x130;
+    undefined2 field_0x132;
+    undefined2 field_0x134;
+    struct vec2_16 delta_pos; // 0x136: Values to add every frame to pos
+    undefined field_0x13a;
+    undefined field_0x13b;
+};
+ASSERT_SIZE(struct live_effect, 316);
+
+// Contains information about how effects should be played, and the ones that are currently active.
+struct effect_control {
+    struct live_effect live_effects[32]; // 0x0
+    uint32_t next_unique_id;             // 0x2780
+    uint32_t is_ground_mode;             // 0x2784
+    // 0x2788: Entry in wan_table for file 1 if ground mode, file 292 if dungeon mode
+    uint16_t wan_entry;
+    undefined field_0x278a;
+    undefined field_0x278b;
+    undefined4 field_0x278c;
+    undefined2 field_0x2790;
+    undefined field_0x2792[12];
+    bool screen_effect_active[2]; // 0x279E: Index 0 is for SCREEN_MAIN, 1 for SCREEN_SUB
+    undefined field_0x27a0;
+    undefined field_0x27a1;
+    undefined field_0x27a2;
+    undefined field_0x27a3;
+};
+ASSERT_SIZE(struct effect_control, 10148);
 
 #endif

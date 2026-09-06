@@ -58,12 +58,12 @@ bool ItemIsActive(struct entity* entity, enum item_id item_id);
 int GetVisibilityRange(void);
 void RevealWholeFloor(struct entity* entity);
 bool DungeonScreenEffectActive(void);
-int PlayEffectAnimationEntity(struct entity* entity, int effect_id, bool blocking,
+int PlayEffectAnimationEntity(struct entity* entity, int effect_id, bool wait,
                               enum wan_offset_type wan_offset, uint8_t finish_cur_effects_first,
                               bool play_if_two_turn_invisible, enum direction_id effect_dir,
                               uint16_t* custom_oam_adjustment_info);
-int PlayEffectAnimationPos(struct position* pos, int effect_id, bool blocking);
-int PlayEffectAnimationPixelPos(struct pixel_position* pixel_pos, int effect_id, bool blocking);
+int PlayEffectAnimationPos(struct position* pos, int effect_id, bool wait);
+int PlayEffectAnimationPixelPos(struct pixel_position* pixel_pos, int effect_id, bool wait);
 void FinishPlayingEffectAnimations(bool wait_for_non_blocking);
 void CopyStatusIconFlags(struct status_icon_flags* dst, struct entity* src);
 void UpdateStatusIconFlags(struct entity* entity);
@@ -89,6 +89,7 @@ void PlayDefensiveStatMultiplierDownEffect(struct entity* entity, int stat_index
 void PlayHitChanceUpEffect(struct entity* entity, int stat_index);
 void PlayHitChanceDownEffect(struct entity* entity, int stat_index);
 void PlaySeByIdIfShouldDisplayEntity(struct entity* entity, int se_id);
+void PlayItemThrowSfx(struct entity* user, enum item_category category);
 void PlayMissSfx(struct entity* attacker, struct entity* defender);
 void PlayStairsSfx(void);
 bool ShouldDisplayEntityAdvanced(struct entity* entity);
@@ -144,6 +145,7 @@ bool FindFarthestUnoccupiedTileWithin2(struct position* pos_out, struct position
                                        bool random_room);
 bool FindUnoccupiedTileWithin3(struct position* pos_out, struct position* origin, bool random_room);
 uint8_t TickStatusTurnCounter(uint8_t* counter);
+void GetCurvedProjectileTargetPos(struct position* target_pos, struct entity* user);
 void AdvanceFrame(undefined param_1);
 void UnkMapRelatedFunc(int switch_case, undefined4 param_2);
 void AnimateWaterShadows(void);
@@ -277,6 +279,11 @@ void UseThrowableItem(struct entity* user);
 void TalkToTeamMemberInFront(struct entity* entity);
 void PlayerUseMove(struct entity* entity);
 void UseRegularAttackOrStruggle(struct entity* entity);
+struct entity* GetShopkeeperIfTalkable(struct entity* leader);
+void HandleShopTransaction(bool always_transact);
+void TrySellToShop(bool param_1);
+uint8_t TryBuyFromShop(bool param_1);
+void TriggerThiefAlert(void);
 void ResetDamageData(struct damage_data* damage);
 void FreeLoadedAttackSpriteAndMore(void);
 uint16_t SetAndLoadCurrentAttackAnimation(enum pack_file_id pack_id, uint16_t file_index);
@@ -295,7 +302,7 @@ void SwapMonsterWanFileIndex(int src_id, int dst_id);
 void LoadMonsterSprite(enum monster_id monster_id, undefined param_2);
 void DeleteMonsterSpriteFile(enum monster_id monster_id);
 void DeleteAllMonsterSpriteFiles(void);
-bool CanMonsterBeAddedToTeam(struct entity* entity);
+bool MonsterCannotBeAddedToTeam(struct entity* entity);
 void EuFaintCheck(bool non_team_member_fainted, bool set_unk_byte);
 void HandleFaint(struct entity* fainted_entity, union damage_source damage_source,
                  struct entity* killer);
@@ -324,6 +331,7 @@ void RestorePpAllMovesSetFlags(struct entity* entity);
 bool CheckTeamMemberIdxVeneer(int member_idx);
 bool CheckMonsterTeamMemberIdx(struct entity* entity);
 bool IsMonsterIdInNormalRangeVeneer(enum monster_id monster_id);
+void ActivateTerrainEffects(struct entity* entity);
 void BoostIQ(struct entity* entity, int iq_boost, bool suppress_logs);
 void MakeMonsterIdleInDirection2(struct entity* entity, enum direction_id direction);
 bool ShouldMonsterHeadToStairs(struct entity* entity);
@@ -389,9 +397,11 @@ enum mobility_type GetMobilityTypeCheckSlip(enum monster_id species, bool walk_o
 enum mobility_type GetMobilityTypeCheckSlipAndFloating(struct entity* monster,
                                                        enum monster_id species);
 bool IsInvalidSpawnTile(enum monster_id monster_id, struct tile* tile);
+bool CannotMoveToTile(struct entity* monster, struct position* tile_pos);
 enum mobility_type GetMobilityTypeAfterIqSkills(struct entity* monster,
                                                 enum mobility_type mobility_type);
 bool CanMoveThroughWalls(struct entity* monster);
+bool CannotStandOnTileNoMonsterCheck(struct entity* monster, struct position* tile_pos);
 bool CannotStandOnTile(struct entity* monster, struct position* tile_pos);
 int CalcSpeedStage(struct entity* entity, int counter_weight);
 int CalcSpeedStageWrapper(struct entity* entity);
@@ -414,6 +424,7 @@ bool MonsterHasNegativeStatus(struct entity* monster, bool check_held_item);
 bool IsMonsterSleeping(struct entity* monster);
 bool MonsterHasQuarterHp(struct entity* monster);
 bool CheckVariousStatuses2(struct entity* entity, bool blind_check);
+bool CanBeTalkedTo(struct entity* monster);
 bool HasStatusThatPreventsOutlawEscaping(struct entity* monster);
 bool CheckVariousConditions(struct entity* entity);
 bool CheckVariousStatuses(struct entity* entity);
@@ -475,6 +486,7 @@ void DisplayMonster(struct entity* entity);
 void AnimateFlyingMoves(struct entity* entity);
 void ChangeMonsterAnimation(struct entity* monster, int8_t animation_id,
                             enum direction_id direction);
+void MakeMonsterIdleInDirectionIfValid(struct entity* monster, enum direction_id direction);
 void ChangeMonsterAnimationToIdle(struct entity* monster, enum direction_id direction);
 void ChangeMonsterAnimationToHurt(struct entity* monster, enum direction_id direction);
 uint8_t GetIdleAnimationId(struct entity* entity);
@@ -515,9 +527,10 @@ struct entity* GetLeaderIfVisible(struct entity* monster);
 void RunMonsterAi(struct entity* monster, int unused);
 void ApplyDamageAndEffects(struct entity* attacker, struct entity* defender,
                            struct damage_data* damage_data, bool false_swipe, bool exp_on_faint,
-                           union damage_source damage_source, bool defender_response);
+                           union damage_source damage_source, bool defender_response, bool fissure);
 bool ApplyDamage(struct entity* attacker, struct entity* defender, struct damage_data* damage_data,
-                 bool false_swipe, bool exp_on_faint, union damage_source damage_source);
+                 bool false_swipe, bool exp_on_faint, union damage_source damage_source,
+                 bool fissure);
 bool AftermathCheck(struct entity* attacker, struct entity* defender,
                     union damage_source damage_source);
 enum type_matchup GetTypeMatchupBothTypes(struct entity* attacker, struct entity* defender,
@@ -537,25 +550,25 @@ void CalcDamage(struct entity* attacker, struct entity* defender, enum type_id a
                 fx32_8 damage_mult_fp, enum move_id move_id, bool full_calc);
 void ApplyDamageAndEffectsWrapper(struct entity* monster, int damage, enum damage_message message,
                                   union damage_source damage_source);
-void CalcRecoilDamageFixed(struct entity* attacker, int fixed_damage, undefined4 param_3,
+void CalcRecoilDamageFixed(struct entity* attacker, int fixed_damage, bool exp_on_faint,
                            struct damage_data* damage_out, enum move_id move_id,
                            enum type_id attack_type, union damage_source damage_source,
-                           enum damage_message damage_message, undefined4 param_9,
-                           undefined4 param_10);
+                           enum damage_message damage_message, bool defender_response,
+                           bool fissure);
 void CalcDamageFixed(struct entity* attacker, struct entity* defender, int fixed_damage,
                      bool exp_on_faint, struct damage_data* damage_out, enum type_id attack_type,
                      enum move_category move_category, union damage_source damage_source,
-                     enum damage_message damage_message, undefined4 param_10, undefined4 param_11);
+                     enum damage_message damage_message, bool defender_response, bool fissure);
 void CalcDamageFixedNoCategory(struct entity* attacker, struct entity* defender, int fixed_damage,
                                bool exp_on_faint, struct damage_data* damage_out,
                                enum type_id attack_type, union damage_source damage_source,
-                               enum damage_message damage_message, undefined4 param_9,
-                               undefined4 param_10);
+                               enum damage_message damage_message, bool defender_response,
+                               bool fissure);
 void CalcDamageFixedWrapper(struct entity* attacker, struct entity* defender, int fixed_damage,
                             bool exp_on_faint, struct damage_data* damage_out,
                             enum type_id attack_type, enum move_category move_category,
                             union damage_source damage_source, enum damage_message damage_message,
-                            undefined4 param_10, undefined4 param_11);
+                            bool defender_response, bool fissure);
 void UpdateShopkeeperModeAfterAttack(struct entity* attacker, struct entity* defender);
 void UpdateShopkeeperModeAfterTrap(struct entity* shopkeeper, bool non_team_member);
 void ResetDamageCalcDiagnostics(void);
@@ -811,6 +824,11 @@ void TryExplosion(struct entity* user, struct entity* target, struct position* p
                   enum type_id attack_type, union damage_source damage_source);
 void TryAftermathExplosion(struct entity* user, struct entity* target, struct position* pos,
                            int radius, enum type_id attack_type, union damage_source damage_source);
+void CalcExplosionDamage(struct entity* user, struct entity* target, enum type_id attack_type,
+                         enum move_id move_id, uint32_t base_fixed_damage);
+void CalcAftermathExplosionDamage(struct entity* user, struct entity* target,
+                                  enum type_id attack_type, enum move_id move_id,
+                                  uint32_t base_fixed_damage);
 void TryWarp(struct entity* user, struct entity* target, enum warp_type warp_type,
              struct position* position);
 void EnsureCanStandCurrentTile(struct entity* entity);

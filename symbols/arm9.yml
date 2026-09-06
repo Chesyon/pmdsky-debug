@@ -3774,8 +3774,8 @@ arm9:
       description: |-
         Note: unverified, ported from Irdkwia's notes
         
-        r0: ???
-        r1: ???
+        r0: preprocessor_args pointer
+        r1: position in preprocessor_args id_vals array
         r2: move
         r3: type_print
     - name: InitMove

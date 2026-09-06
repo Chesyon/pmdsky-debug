@@ -161,6 +161,28 @@ overlay10:
         r0: sprite index in wan_table to load from
         r1: 0 for 8bpp, 1 for 4bpp
         r2: starting palette number for 4bpp
+    - name: TerminateAllEffects
+      address:
+        EU: 0x22BE508
+      description: |-
+        Terminates all currently playing live effects.
+        
+        No params.
+    - name: TerminateEffect
+      address:
+        EU: 0x22BE5FC
+      description: |-
+        Makes the live effect with the given unique id stop playing in the middle of execution.
+        
+        r0: unique id
+        r1: true if the effect does not have type WAN File 0/1
+    - name: TerminateEffectWrapper
+      address:
+        EU: 0x22BE790
+      description: |-
+        Wrapper for TerminateEffect.
+        
+        r0: unique id
     - name: GetEffectAnimationWanOffset
       address:
         EU: 0x22BE7F4
@@ -171,6 +193,33 @@ overlay10:
         
         r0: anim_id
         return: GetEffectAnimation(anim_id)->wan_offset
+    - name: PlayEffect
+      address:
+        EU: 0x22BE900
+      description: |-
+        Fills a live_effect struct's fields with specific effect-related information to begin playback.
+        
+        Note that some initialization must be done first (see callsites).
+        
+        r0: live_effect
+        r1: screen
+    - name: GetLiveEffectIdx
+      address:
+        EU: 0x22BF2E0
+      description: |-
+        Gets a live effect's index in EFFECT_CONTROL.live_effects from its unique id.
+        
+        r0: unique id
+        return: index, or -1 if it is not present
+    - name: DisplayEffect
+      address:
+        EU: 0x22BFE30
+      description: |-
+        Displays the current frame of an effect animation, also handling playing the sound effect if necessary.
+        
+        r0: live_effect
+        r1: pixel position of camera
+        return: true if the effect's is_non_blocking field is 0, false otherwise
     - name: ScreenEffectActive
       address:
         EU: 0x22C0228

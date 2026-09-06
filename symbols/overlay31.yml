@@ -107,6 +107,13 @@ overlay31:
         Uses a switch statement based on the state field in stairs_menu to determine what actions to take.
         
         return: 4 if should close stairs menu entirely, 1 otherwise (including when switching between main/info menus)
+    - name: StairsDescriptionCallback
+      address:
+        EU: 0x2383E48
+      description: |-
+        Callback function passed to CreateAdvancedTextBox for creating the description for the stairs in the info menu.
+        
+        r0: window_id
     - name: CloseMainStairsMenu
       address:
         EU: 0x2383E8C
@@ -324,7 +331,9 @@ overlay31:
         NA: 0x10
         JP: 0x10
       description: "Note: unverified, ported from Irdkwia's notes"
-    - name: DUNGEON_WINDOW_PARAMS_5
+    - name: STAIRS_INFO_WINDOW_PARAMS
+      aliases:
+        - DUNGEON_WINDOW_PARAMS_5
       address:
         EU: 0x238AA64
         NA: 0x2389E40
@@ -333,7 +342,7 @@ overlay31:
         EU: 0x10
         NA: 0x10
         JP: 0x10
-      description: "Note: unverified, ported from Irdkwia's notes"
+      description: Parameters for the text box created after pressing Info in the stairs menu.
     - name: DUNGEON_WINDOW_PARAMS_6
       address:
         EU: 0x238AA74

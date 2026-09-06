@@ -786,7 +786,7 @@ overlay29:
         
         r0: entity pointer
         r1: Effect ID
-        r2: whether the effect is blocking or not (i.e. whether the function should wait until it is finished or 100 frames have passed to return)
+        r2: if the effect is blocking, whether the function should wait until it is finished or 100 frames have passed to return
         r3: WAN offset on entity sprite to use
         stack[0]: if 2, waits until any in-progress effects are finished before playing the given one; if 1, waits only for blocking effects
         stack[1]: whether to still play the effect even if the entity is using a non-flying two-turn move like Dig or Shadow Force
@@ -803,7 +803,7 @@ overlay29:
         
         r0: Position where the effect should be played
         r1: Effect ID
-        r2: whether the effect is blocking or not (i.e. whether the function should wait until it is finished or 100 frames have passed to return)
+        r2: if the effect is blocking, whether the function should wait until it is finished or 100 frames have passed to return
         return: -1 if the animation is finished / exceeded 100 frames, or a unique id for the playing effect otherwise
     - name: PlayEffectAnimationPixelPos
       address:
@@ -815,7 +815,7 @@ overlay29:
         
         r0: Pixel position where the effect should be played
         r1: Effect ID
-        r2: whether the effect is blocking or not (i.e. whether the function should wait until it is finished or 100 frames have passed to return)
+        r2: if the effect is blocking, whether the function should wait until it is finished or 100 frames have passed to return
         return: -1 if the animation is finished / exceeded 100 frames, or a unique id for the playing effect otherwise
     - name: FinishPlayingEffectAnimations
       aliases:
@@ -827,7 +827,7 @@ overlay29:
       description: |-
         Waits until currently playing effect animations are finished, and returns only when they are done. Might have some other effects too.
         
-        r0: if 0, will only wait until effects with an is_non_blocking field equal to 0 finish; if 1, waits for all effects to finish
+        r0: if 0, will only wait for effects with an is_non_blocking field equal to 0; if 1, waits for all effects to finish
     - name: CopyStatusIconFlags
       address:
         EU: 0x22E43F0
@@ -1070,6 +1070,14 @@ overlay29:
         
         r0: entity pointer
         r1: Sound effect ID
+    - name: PlayItemThrowSfx
+      address:
+        EU: 0x22E60D8
+      description: |-
+        Plays the appropriate sound effect for throwing an item based on its category.
+        
+        r0: user entity pointer (unused)
+        r1: item category
     - name: PlayMissSfx
       address:
         EU:
@@ -1616,6 +1624,14 @@ overlay29:
         
         r0: pointer to the status turn counter
         return: new counter value
+    - name: GetCurvedProjectileTargetPos
+      address:
+        EU: 0x22EA44C
+      description: |-
+        Gets the position a curved projectile should land at when thrown by the user.
+        
+        r0: [output] position
+        r1: user entity pointer
     - name: AdvanceFrame
       address:
         EU: 0x22EA990
@@ -2878,6 +2894,43 @@ overlay29:
         Handles using the regular attack or Struggle by the entity.
         
         r0: entity pointer
+    - name: GetShopkeeperIfTalkable
+      address:
+        EU: 0x22F6BC8
+      description: |-
+        Returns a pointer to the floor's shopkeeper, or an invalid entity pointer if there is none, they cannot be talked to, or they are not in the same room as the leader.
+        
+        r0: leader pointer
+        return: shopkeeper pointer
+    - name: HandleShopTransaction
+      address:
+        EU: 0x22F6C84
+      description: |-
+        Checks if a Kecleon shop transaction should occur and initiates it if so.
+        
+        r0: whether to attempt a transaction even if the leader is still standing in the shop
+    - name: TrySellToShop
+      address:
+        EU: 0x22F7118
+      description: |-
+        Handles selling to a Kecleon shop.
+        
+        r0: ?
+    - name: TryBuyFromShop
+      address:
+        EU: 0x22F73C4
+      description: |-
+        Handles buying from a Kecleon shop.
+        
+        r0: ?
+        return: 0 if the purchase was successful, 1 or 2 if should be treated as a theft
+    - name: TriggerThiefAlert
+      address:
+        EU: 0x22F7664
+      description: |-
+        Triggers the sequence for stealing from a Kecleon shop.
+        
+        No params.
     - name: ResetDamageData
       address:
         EU: 0x22F77D0
@@ -3056,15 +3109,18 @@ overlay29:
         Note: unverified, ported from Irdkwia's notes
         
         No params.
-    - name: CanMonsterBeAddedToTeam
+    - name: MonsterCannotBeAddedToTeam
+      aliases:
+        - CanMonsterBeAddedToTeam
       address:
         EU: 0x22F81EC
         NA: 0x22F7834
         JP: 0x22F8DF4
       description: |-
-        Returns false if there are already four members on the active team or if the total body size of the team would be greater than 6 if this monster was added.
+        Returns true if there are already four members on the active team or if the total body size of the team would be greater than 6 if this monster was added.
         
         r0: entity pointer
+        return: bool
     - name: EuFaintCheck
       address:
         EU: 0x22F88E8
@@ -3372,6 +3428,13 @@ overlay29:
         
         r0: monster ID
         return: bool
+    - name: ActivateTerrainEffects
+      address:
+        EU: 0x22FA680
+      description: |-
+        Handles causing the burn from lava, healing a burn from water, and decreasing hunger in the walls.
+        
+        r0: monster entity pointer
     - name: BoostIQ
       address:
         EU: 0x22FAB50
@@ -4035,6 +4098,15 @@ overlay29:
         r0: monster ID
         r1: tile pointer
         return: true means the monster CANNOT spawn on this tile
+    - name: CannotMoveToTile
+      address:
+        EU: 0x2300190
+      description: |-
+        Same as CannotStandOnTile, but also returns false if the monster is currently on the tile.
+        
+        r0: Entity pointer
+        r1: Tile position pointer
+        return: True if the monster cannot move to the specified tile, false if it can
     - name: GetMobilityTypeAfterIqSkills
       address:
         EU: 0x23002F4
@@ -4055,17 +4127,22 @@ overlay29:
         
         r0: Entity pointer
         return: True if the monster can move through walls.
+    - name: CannotStandOnTileNoMonsterCheck
+      address:
+        EU: 0x2300384
+        NA: 0x22FF958
+        JP: 0x2300D28
+      description: |-
+        Same as CannotStandOnTile, but without the check for another monster on the tile.
+        
+        r0: Entity pointer
+        r1: Tile position pointer
+        return: True if the monster cannot stand on the specified tile, false if it can
     - name: CannotStandOnTile
       address:
-        EU:
-          - 0x2300384
-          - 0x23006C8
-        NA:
-          - 0x22FF958
-          - 0x22FFC9C
-        JP:
-          - 0x2300D28
-          - 0x23010AC
+        EU: 0x23006C8
+        NA: 0x22FFC9C
+        JP: 0x23010AC
       description: |-
         Checks if a given monster cannot stand on the tile at the given position.
         
@@ -4311,6 +4388,14 @@ overlay29:
         
         r0: Entity pointer
         r1: If true, return 1 if entity is blinded
+        return: bool
+    - name: CanBeTalkedTo
+      address:
+        EU: 0x23013F8
+      description: |-
+        Returns true if the monster doesn't have a status that prevents it from being talked to.
+        
+        r0: entity pointer
         return: bool
     - name: HasStatusThatPreventsOutlawEscaping
       address:
@@ -4927,6 +5012,14 @@ overlay29:
         r0: Entity pointer
         r1: ID of the animation to set
         r2: Direction to turn the monster in, or DIR_NONE to keep the current direction
+    - name: MakeMonsterIdleInDirectionIfValid
+      address:
+        EU: 0x230542C
+      description: |-
+        Makes the monster play their idle animation. Also makes them do so in the given direction and sets the direction field of their action struct if the direction parameter is between 0 and 7 (inclusive).
+        
+        r0: entity pointer
+        r1: direction
     - name: ChangeMonsterAnimationToIdle
       address:
         EU: 0x2305474
@@ -5331,6 +5424,7 @@ overlay29:
         stack[0]: experience flag (see ApplyDamage)
         stack[1]: Damage source (see HandleFaint)
         stack[2]: defender response flag. If true, the defender can respond to the attack with various effects. If false, the only post-damage effect that can happen is the Rage attack boost.
+        stack[3]: is fissure
     - name: ApplyDamage
       address:
         EU: 0x2309A0C
@@ -5346,6 +5440,7 @@ overlay29:
         r3: False Swipe flag, causes the defender's HP to be set to 1 if it would otherwise have been 0
         stack[0]: experience flag, controls whether or not experience will be granted upon a monster fainting, and whether enemy evolution might be triggered
         stack[1]: Damage source (see HandleFaint)
+        stack[2]: is fissure
         return: True if the target fainted (reviving does not count as fainting)
     - name: AftermathCheck
       address:
@@ -5515,13 +5610,14 @@ overlay29:
         
         r0: entity pointer
         r1: fixed damage
-        r2: ?
+        r2: experience flag (see ApplyDamage)
         r3: [output] struct containing info about the damage calculation
         stack[0]: move ID (interestingly, this doesn't seem to be used by the function)
         stack[1]: attack type
         stack[2]: damage source
         stack[3]: damage message
-        others: ?
+        stack[4]: defender response flag (see ApplyDamageAndEffects)
+        stack[5]: is fissure (always 0)
     - name: CalcDamageFixed
       address:
         EU: 0x230DCB4
@@ -5539,7 +5635,8 @@ overlay29:
         stack[2]: move category
         stack[3]: damage source
         stack[4]: damage message
-        others: ?
+        stack[5]: defender response flag (see ApplyDamageAndEffects)
+        stack[6]: is fissure
     - name: CalcDamageFixedNoCategory
       address:
         EU: 0x230DE1C
@@ -5556,7 +5653,8 @@ overlay29:
         stack[1]: attack type
         stack[2]: damage source
         stack[3]: damage message
-        others: ?
+        stack[4]: defender response flag (see ApplyDamageAndEffects)
+        stack[5]: is fissure (always 0)
     - name: CalcDamageFixedWrapper
       address:
         EU: 0x230DE68
@@ -5574,7 +5672,8 @@ overlay29:
         stack[2]: move category
         stack[3]: damage source
         stack[4]: damage message
-        others: ?
+        stack[5]: defender response flag (see ApplyDamageAndEffects)
+        stack[6]: is fissure
     - name: UpdateShopkeeperModeAfterAttack
       address:
         EU: 0x230DEB4
@@ -7908,6 +8007,28 @@ overlay29:
         r3: explosion radius (only works correctly with 1 and 2)
         stack[0]: damage type
         stack[1]: damage source (normally DAMAGE_SOURCE_EXPLOSION)
+    - name: CalcExplosionDamage
+      address:
+        EU: 0x232150C
+      description: |-
+        Calculates and inflicts damage from an explosion.
+        
+        r0: user entity pointer
+        r1: target entity pointer
+        r2: damage type
+        r3: move id
+        stack[0]: base fixed damage for non-teammates
+    - name: CalcAftermathExplosionDamage
+      address:
+        EU: 0x2321634
+      description: |-
+        Calculates and inflicts damage from an aftermath explosion.
+        
+        r0: user entity pointer
+        r1: target entity pointer
+        r2: damage type
+        r3: move id
+        stack[0]: base fixed damage for non-teammates
     - name: TryWarp
       address:
         EU: 0x2321770
@@ -12499,6 +12620,12 @@ overlay29:
       length:
         EU: 0x4
       description: "[Runtime] Used to store the number of positions output by GetPossibleAiArcItemTargets and the number of directions/probabilities output by GetPossibleAiThrownItemDirections."
+    - name: EXPLOSION_FIXED_DAMAGES
+      address:
+        EU: 0x2354300
+      length:
+        EU: 0xC
+      description: "Array of damages indexed by radius for explosion damage (before reductions from exclusive items, etc)."
     - name: EXCL_ITEM_EFFECTS_EVASION_BOOST
       address:
         EU: 0x2354310

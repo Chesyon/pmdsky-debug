@@ -108,6 +108,7 @@ extern struct exclusive_item_effect_id_8 EXCL_ITEM_EFFECTS_WEATHER_ATK_SPEED_BOO
 extern struct exclusive_item_effect_id_8 EXCL_ITEM_EFFECTS_WEATHER_MOVE_SPEED_BOOST[8];
 extern struct exclusive_item_effect_id_8 EXCL_ITEM_EFFECTS_WEATHER_NO_STATUS[8];
 extern uint32_t AI_THROWN_ITEM_ACTION_CHOICE_COUNT;
+extern uint32_t EXPLOSION_FIXED_DAMAGES[3];
 extern struct exclusive_item_effect_id_8 EXCL_ITEM_EFFECTS_EVASION_BOOST[8];
 extern struct tile DEFAULT_TILE;
 extern bool HIDDEN_STAIRS_SPAWN_BLOCKED;

@@ -4396,6 +4396,7 @@ enum wan_offset_type {
     WAN_OFFSET_HAND_LEFT = 1,
     WAN_OFFSET_HAND_RIGHT = 2,
     WAN_OFFSET_CENTER = 3,
+    WAN_OFFSET_NONE = 4,
 };
 
 // This is sometimes stored as an 8-bit integer

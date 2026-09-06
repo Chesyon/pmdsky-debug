@@ -10,6 +10,7 @@ void StairsMenu(struct entity* leader, bool leave_minimap_closed_after);
 void InitStairsMenu(struct entity* leader);
 void StairsSubheadingCallback(int window_id);
 int StairsMenuLoop(void);
+void StairsDescriptionCallback(int window_id);
 void CloseMainStairsMenu(void);
 void FreeStairsMenu(void);
 bool EntityIsValidOverlay31(struct entity* entity);

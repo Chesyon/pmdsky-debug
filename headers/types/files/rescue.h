@@ -108,7 +108,7 @@ ASSERT_SIZE(struct rescue_monster_tables, 2944);
 // by the selected mission_weighted_category, and GenerateMission converts the template into a
 // mission struct. 0x1560 in rescue.bin
 struct mission_templates_table {
-    struct mission_template[600];
+    struct mission_template mission_templates[600];
     // This is the perfect size for a mission_category, but not for a template...
     uint16_t unused[4];
 };
